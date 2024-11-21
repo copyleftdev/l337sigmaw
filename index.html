@@ -65,17 +65,7 @@
             font-size: 1.2rem;
             font-style: italic;
             opacity: 0;
-            animation: fadeInOut 5s infinite;
-        }
-
-        /* Fading Animation for Slogans */
-        @keyframes fadeInOut {
-            0%, 20% {
-                opacity: 1;
-            }
-            80%, 100% {
-                opacity: 0;
-            }
+            transition: opacity 0.5s ease-in-out;
         }
 
         /* Canvas for Particles */
@@ -87,6 +77,25 @@
             height: 100%;
             z-index: 1;
             pointer-events: none; /* Ensure canvas doesn't block interaction */
+        }
+
+        /* Responsive Design for Smaller Screens */
+        @media (max-width: 768px) {
+            .text {
+                font-size: 6vw; /* Reduce font size */
+            }
+
+            .github-link {
+                font-size: 1.2rem; /* Smaller font for GitHub link */
+            }
+
+            .github-link i {
+                font-size: 1.5rem; /* Adjust icon size */
+            }
+
+            .slogan {
+                font-size: 1rem; /* Smaller slogan size */
+            }
         }
     </style>
 </head>
@@ -171,7 +180,7 @@
         // Create particles for a character
         const createParticles = (x, y) => {
             const localParticles = [];
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 5; i++) { // Reduced particles for performance
                 const particle = new Particle(x, y);
                 particles.push(particle);
                 localParticles.push(particle);
@@ -197,13 +206,14 @@
             }, 1000); // Matches GSAP duration
         };
 
-        // Add hover events for each character
+        // Add hover and touch events
         const handleHover = () => {
             const chars = document.querySelectorAll(".char");
 
             chars.forEach((char) => {
                 let localParticles = [];
 
+                // For hover (desktop)
                 char.addEventListener("mouseenter", () => {
                     if (localParticles.length === 0) {
                         localParticles = explodeCharacter(char);
@@ -216,11 +226,34 @@
                         localParticles = [];
                     }
                 });
+
+                // For touch (mobile)
+                char.addEventListener("touchstart", () => {
+                    if (localParticles.length === 0) {
+                        localParticles = explodeCharacter(char);
+                    }
+                });
+
+                char.addEventListener("touchend", () => {
+                    if (localParticles.length > 0) {
+                        reformCharacter(char, localParticles);
+                        localParticles = [];
+                    }
+                });
             });
         };
 
-        // Animation loop
-        const animate = () => {
+        // Animation loop with throttling for performance
+        let lastTime = 0;
+        const fps = 30;
+
+        const animate = (timestamp) => {
+            if (timestamp - lastTime < 1000 / fps) {
+                requestAnimationFrame(animate);
+                return;
+            }
+            lastTime = timestamp;
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             particles.forEach((particle) => {
                 particle.update();
@@ -241,8 +274,11 @@
         let sloganIndex = 0;
 
         const rotateSlogan = () => {
+            gsap.to(sloganElement, { opacity: 0, duration: 0.5, onComplete: () => {
+                sloganElement.textContent = slogans[sloganIndex];
+                gsap.to(sloganElement, { opacity: 1, duration: 0.5 });
+            }});
             sloganIndex = (sloganIndex + 1) % slogans.length;
-            sloganElement.textContent = slogans[sloganIndex];
         };
 
         // Change slogans every 5 seconds
