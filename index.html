@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1337SIGMA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.0/gsap.min.js"></script>
+    <style>
+        /* General Body Reset */
+        body {
+            margin: 0;
+            background: black;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Main Container */
+        .container {
+            position: relative;
+            text-align: center; /* Center-align all text and elements */
+        }
+
+        /* Main 1337SIGMA Text */
+        .text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 8vw; /* Dynamic size based on screen width */
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 1rem; /* Add spacing for GitHub link */
+        }
+
+        /* GitHub Link */
+        .github-link {
+            font-size: 1.5rem; /* Smaller than main text */
+            font-weight: 500; /* Medium weight for contrast */
+            text-decoration: none;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem; /* Space between icon and text */
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        /* GitHub Hover Effect */
+        .github-link:hover {
+            color: #00ffcc; /* Neon green-blue on hover */
+            transform: scale(1.05); /* Subtle scaling for interactivity */
+        }
+
+        .github-link i {
+            font-size: 1.8rem; /* Slightly larger for emphasis */
+        }
+
+        /* Slogan Styles */
+        .slogan {
+            margin-top: 1.5rem; /* Consistent spacing below the GitHub link */
+            font-size: 1.2rem;
+            font-style: italic;
+            opacity: 0;
+            animation: fadeInOut 5s infinite;
+        }
+
+        /* Fading Animation for Slogans */
+        @keyframes fadeInOut {
+            0%, 20% {
+                opacity: 1;
+            }
+            80%, 100% {
+                opacity: 0;
+            }
+        }
+
+        /* Canvas for Particles */
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none; /* Ensure canvas doesn't block interaction */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Main Text -->
+        <div class="text" id="text">1337SIGMA</div>
+
+        <!-- GitHub Link -->
+        <a class="github-link" href="https://github.com/copyleftdev" target="_blank">
+            <i class="fab fa-github"></i> Visit My GitHub
+        </a>
+
+        <!-- Rotating Slogan -->
+        <div class="slogan" id="slogan">Initializing Leet Protocol...</div>
+    </div>
+    <canvas id="particleCanvas"></canvas>
+
+    <script>
+        const textElement = document.getElementById("text");
+        const sloganElement = document.getElementById("slogan");
+        const canvas = document.getElementById("particleCanvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+        const gravity = 0.05;
+
+        // Particle Class
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.startX = x;
+                this.startY = y;
+                this.alpha = 1;
+                this.vx = (Math.random() - 0.5) * 4; // Random horizontal velocity
+                this.vy = Math.random() * -4; // Random upward velocity
+            }
+
+            update() {
+                this.vy += gravity; // Gravity effect
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= 0.02; // Fade out
+                if (this.alpha < 0) this.alpha = 0;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.font = "20px FontAwesome";
+                ctx.fillStyle = "white";
+                ctx.fillText("\uf714", this.x, this.y); // Skull-crossbones icon
+            }
+
+            reform() {
+                gsap.to(this, {
+                    x: this.startX,
+                    y: this.startY,
+                    alpha: 1,
+                    duration: 1,
+                    ease: "power2.out",
+                });
+            }
+        }
+
+        // Split text into individual spans
+        const splitText = () => {
+            const text = textElement.textContent;
+            textElement.innerHTML = ""; // Clear original text
+
+            [...text].forEach((char) => {
+                const span = document.createElement("span");
+                span.classList.add("char");
+                span.textContent = char;
+                textElement.appendChild(span);
+            });
+        };
+
+        // Create particles for a character
+        const createParticles = (x, y) => {
+            const localParticles = [];
+            for (let i = 0; i < 10; i++) {
+                const particle = new Particle(x, y);
+                particles.push(particle);
+                localParticles.push(particle);
+            }
+            return localParticles;
+        };
+
+        // Explode a single character
+        const explodeCharacter = (charElement) => {
+            const rect = charElement.getBoundingClientRect();
+            const charX = rect.left + rect.width / 2;
+            const charY = rect.top + rect.height / 2;
+
+            charElement.style.opacity = "0"; // Hide the character
+            return createParticles(charX, charY);
+        };
+
+        // Reform a single character
+        const reformCharacter = (charElement, localParticles) => {
+            localParticles.forEach((particle) => particle.reform());
+            setTimeout(() => {
+                charElement.style.opacity = "1"; // Show character again
+            }, 1000); // Matches GSAP duration
+        };
+
+        // Add hover events for each character
+        const handleHover = () => {
+            const chars = document.querySelectorAll(".char");
+
+            chars.forEach((char) => {
+                let localParticles = [];
+
+                char.addEventListener("mouseenter", () => {
+                    if (localParticles.length === 0) {
+                        localParticles = explodeCharacter(char);
+                    }
+                });
+
+                char.addEventListener("mouseleave", () => {
+                    if (localParticles.length > 0) {
+                        reformCharacter(char, localParticles);
+                        localParticles = [];
+                    }
+                });
+            });
+        };
+
+        // Animation loop
+        const animate = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((particle) => {
+                particle.update();
+                particle.draw();
+            });
+            requestAnimationFrame(animate);
+        };
+
+        // Rotating slogans
+        const slogans = [
+            "Initializing Leet Protocol...",
+            "All Your Base Are Belong to Us.",
+            "Access Denied: jk, Welcome!",
+            "Hack the Planet!",
+            "Hello, World! Meet 1337SIGMA.",
+        ];
+
+        let sloganIndex = 0;
+
+        const rotateSlogan = () => {
+            sloganIndex = (sloganIndex + 1) % slogans.length;
+            sloganElement.textContent = slogans[sloganIndex];
+        };
+
+        // Change slogans every 5 seconds
+        setInterval(rotateSlogan, 5000);
+
+        // Initialize
+        splitText();
+        handleHover();
+        animate();
+    </script>
+</body>
+</html>
